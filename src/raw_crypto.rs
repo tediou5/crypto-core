@@ -293,35 +293,48 @@ mod test {
 
     #[test]
     fn raw_crypto() {
-        let mut c1 = RawCryptor::new::<C1>();
-        let mut c2 = RawCryptor::new::<C2>();
+        let c1 = RawCryptor::new::<C1>();
+        let c2 = RawCryptor::new::<C2>();
+        let mut map = std::collections::HashMap::from([("c1", c1), ("c2", c2)]);
 
-        let init_handshake = c1.init_handshake(gen_private(), gen_public()).unwrap();
+        let init_handshake = map
+            .get_mut("c1")
+            .unwrap()
+            .init_handshake(gen_private(), gen_public())
+            .unwrap();
         assert_eq!(init_handshake, vec![1]);
 
-        let handle_handshake = c2
+        let handle_handshake = map
+            .get_mut("c2")
+            .unwrap()
             .handle_handshake(gen_private(), gen_public(), &[0])
             .unwrap();
         assert_eq!(handle_handshake, Some(vec![2]));
 
-        c1.handle_handshake_response(&[0]).unwrap();
-        c2.handle_handshake_response(&[0]).unwrap();
+        map.get_mut("c1")
+            .unwrap()
+            .handle_handshake_response(&[0])
+            .unwrap();
+        map.get_mut("c2")
+            .unwrap()
+            .handle_handshake_response(&[0])
+            .unwrap();
 
         let dst = &mut [0, 0, 0];
 
-        let on_send = c1.on_send(&[0], dst).unwrap();
+        let on_send = map.get_mut("c1").unwrap().on_send(&[0], dst).unwrap();
         assert_eq!(on_send, vec![1, 0, 0]);
-        let on_send = c2.on_send(&[0], dst).unwrap();
+        let on_send = map.get_mut("c2").unwrap().on_send(&[0], dst).unwrap();
         assert_eq!(on_send, vec![2, 0, 0]);
 
-        let on_recv = c1.on_recv(&[0], dst).unwrap();
+        let on_recv = map.get_mut("c1").unwrap().on_recv(&[0], dst).unwrap();
         assert_eq!(on_recv, vec![1, 0, 0]);
-        let on_recv = c2.on_recv(&[0], dst).unwrap();
+        let on_recv = map.get_mut("c2").unwrap().on_recv(&[0], dst).unwrap();
         assert_eq!(on_recv, vec![2, 0, 0]);
 
-        let get_peer_public = c1.get_peer_public().unwrap();
+        let get_peer_public = map.get_mut("c1").unwrap().get_peer_public().unwrap();
         println!("c1 get_peer_public: {:?}", get_peer_public);
-        let get_peer_public = c2.get_peer_public().unwrap();
+        let get_peer_public = map.get_mut("c2").unwrap().get_peer_public().unwrap();
         println!("c2 get_peer_public: {:?}", get_peer_public);
     }
 }
